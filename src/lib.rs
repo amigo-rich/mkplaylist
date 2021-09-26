@@ -1,12 +1,22 @@
 mod indexer;
 use indexer::index_directory;
 mod music;
+use music::Music;
 pub mod operation;
 use operation::Operation;
 mod store;
 use store::Store;
 
 use std::path::Path;
+
+pub fn display<'a, I>(iter: I)
+where
+    I: Iterator<Item = &'a Music>,
+{
+    for music in iter {
+        println!("{}", music);
+    }
+}
 
 pub fn run(operation: Operation) -> Result<(), ()> {
     let path = Path::new("test.sqlite");
@@ -22,17 +32,13 @@ pub fn run(operation: Operation) -> Result<(), ()> {
         Operation::PlayList(Some(filter)) => {
             let music = store.select_filter(filter).unwrap();
             if let Some(music) = music {
-                for m in music {
-                    println!("{}", m);
-                }
+                display(music.iter());
             }
         }
         Operation::PlayList(None) => {
             let music = store.select().unwrap();
             if let Some(music) = music {
-                for m in music {
-                    println!("{}", m);
-                }
+                display(music.iter());
             }
         }
     }
