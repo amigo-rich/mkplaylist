@@ -37,7 +37,16 @@ impl Store {
 
         let tx = self.con.transaction().unwrap();
         for item in iter {
-            tx.execute(sql, params![item.path]).unwrap();
+            match tx.execute(sql, params![item.path]) {
+                Ok(_) => (),
+                Err(rusqlite::Error::SqliteFailure(e, _)) => match e.code {
+                    rusqlite::ErrorCode::ConstraintViolation => {
+                        continue;
+                    }
+                    _ => return Err(()),
+                }
+                _ => return Err(()),
+            }
         }
         tx.commit().unwrap();
         Ok(())
