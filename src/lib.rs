@@ -30,18 +30,12 @@ pub fn run(operation: Operation) -> Result<(), ()> {
             let music = index_directory(path).unwrap();
             let _ = store.insert(music.into_iter());
         }
-        Operation::PlayList(Some(filter), shuffle) => {
-            let music = store.select_filter(filter).unwrap();
-            if let Some(mut music) = music {
-                if shuffle {
-                    let mut rng = thread_rng();
-                    music.shuffle(&mut rng);
-                }
-                display(music.iter());
-            }
-        }
-        Operation::PlayList(None, shuffle) => {
-            let music = store.select().unwrap();
+        Operation::PlayList(maybe_filter, shuffle) => {
+            let music = if let Some(filter) = maybe_filter {
+                store.select_filter(filter).unwrap()
+            } else {
+                store.select().unwrap()
+            };
             if let Some(mut music) = music {
                 if shuffle {
                     let mut rng = thread_rng();
