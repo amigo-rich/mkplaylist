@@ -55,6 +55,33 @@ impl Store {
         tx.commit()?;
         Ok(())
     }
+    pub fn insert_rating<I>(&mut self, iter: I) -> Result<(), Error>
+    where
+        I: Iterator<Item = (i64, i64)>,
+    {
+        let sql = r#"
+            INSERT INTO rating (music_id, rating_value_id)
+            VALUES (?1, ?2)
+        "#;
+
+        let tx = self.con.transaction()?;
+        for item in iter {
+            match tx.execute(sql, params![item.0, item.1]) {
+                Ok(_) => (),
+                Err(e) => match e {
+                    rusqlite::Error::SqliteFailure(ec, _) => match ec.code {
+                        rusqlite::ErrorCode::ConstraintViolation => {
+                            continue;
+                        }
+                        _ => return Err(Error::StoreRusqlite(e)),
+                    },
+                    _ => return Err(Error::StoreRusqlite(e)),
+                },
+            }
+        }
+        tx.commit()?;
+        Ok(())
+    }
     pub fn select(&self) -> Result<Option<Vec<Music>>, Error> {
         let sql = r#"
             SELECT path
@@ -83,6 +110,26 @@ impl Store {
         // work around an issue with parameters and LIKE
         let filter = format!("%{}%", filter);
         let iter = statement.query_map(params![&filter], |row| Ok(Music { path: row.get(0)? }))?;
+        let mut music: Vec<Music> = Vec::new();
+        for item in iter {
+            music.push(item?);
+        }
+        if music.is_empty() {
+            return Ok(None);
+        }
+        Ok(Some(music))
+    }
+    pub fn select_by_rating(&self, rating: i64) -> Result<Option<Vec<Music>>, Error> {
+        let sql = r#"
+            SELECT music.path
+            FROM rating
+            INNER JOIN music ON rating.music_id = music.id
+            INNER JOIN rating_value ON rating_value_id = rating_value.id
+            WHERE rating_value.id = ?1
+        "#;
+
+        let mut statement = self.con.prepare(sql)?;
+        let iter = statement.query_map(params![rating], |row| Ok(Music { path: row.get(0)? }))?;
         let mut music: Vec<Music> = Vec::new();
         for item in iter {
             music.push(item?);

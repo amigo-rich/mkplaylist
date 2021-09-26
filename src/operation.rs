@@ -4,4 +4,5 @@ use std::path::PathBuf;
 pub enum Operation<'a> {
     Index(PathBuf),
     PlayList(Option<&'a str>, bool),
+    Rate(i64, i64),
 }

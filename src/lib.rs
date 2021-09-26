@@ -46,6 +46,10 @@ pub fn run(operation: Operation) -> Result<(), Error> {
                 display(music.iter());
             }
         }
+        Operation::Rate(music_id, rating_value) => {
+            let inserts = vec![(music_id, rating_value)];
+            let _ = store.insert_rating(inserts.into_iter())?;
+        }
     }
     Ok(())
 }
