@@ -21,6 +21,7 @@ pub fn index_directory(path: PathBuf) -> Result<Vec<Music>, Error> {
                 path: path.to_string(),
             });
         } else {
+            // using the debug formatter for pb is kind of yuck.
             eprintln!("Skipping path '{:?}' due to invalid UTF8", pb);
         }
     }
