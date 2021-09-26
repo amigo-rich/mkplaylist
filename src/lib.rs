@@ -1,3 +1,5 @@
+pub mod error;
+use error::Error;
 mod indexer;
 use indexer::index_directory;
 mod music;
@@ -19,22 +21,22 @@ where
     }
 }
 
-pub fn run(operation: Operation) -> Result<(), ()> {
+pub fn run(operation: Operation) -> Result<(), Error> {
     let path = Path::new("test.sqlite");
     let mut store = match path.is_file() {
-        false => Store::create(path).unwrap(),
-        true => Store::open(path).unwrap(),
+        false => Store::create(path)?,
+        true => Store::open(path)?,
     };
     match operation {
         Operation::Index(path) => {
-            let music = index_directory(path).unwrap();
+            let music = index_directory(path)?;
             let _ = store.insert(music.into_iter());
         }
         Operation::PlayList(maybe_filter, shuffle) => {
             let music = if let Some(filter) = maybe_filter {
-                store.select_filter(filter).unwrap()
+                store.select_filter(filter)?
             } else {
-                store.select().unwrap()
+                store.select()?
             };
             if let Some(mut music) = music {
                 if shuffle {

@@ -1,8 +1,8 @@
 use clap::{App, Arg, SubCommand};
-use mkplaylist::{operation::Operation, run};
+use mkplaylist::{error::Error, operation::Operation, run};
 use std::path::Path;
 
-fn main() {
+fn main() -> Result<(), Error> {
     let matches = App::new("mkplaylist")
         .subcommand(
             SubCommand::with_name("index").arg(
@@ -31,18 +31,17 @@ fn main() {
                 ),
         )
         .get_matches();
-    if let Some(matches) = matches.subcommand_matches("index") {
+    let operation = if let Some(matches) = matches.subcommand_matches("index") {
         let path = Path::new(matches.value_of("path").unwrap()).to_path_buf();
-        run(Operation::Index(path)).unwrap();
+        Operation::Index(path)
     } else if let Some(matches) = matches.subcommand_matches("playlist") {
         if let Some(filter) = matches.value_of("filter") {
-            run(Operation::PlayList(
-                Some(filter),
-                matches.is_present("shuffle"),
-            ))
-            .unwrap();
+            Operation::PlayList(Some(filter), matches.is_present("shuffle"))
         } else {
-            run(Operation::PlayList(None, matches.is_present("shuffle"))).unwrap();
+            Operation::PlayList(None, matches.is_present("shuffle"))
         }
-    }
+    } else {
+        return Err(Error::Usage);
+    };
+    run(operation)
 }
