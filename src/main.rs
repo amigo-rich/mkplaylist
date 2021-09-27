@@ -1,5 +1,5 @@
 use clap::{App, Arg, SubCommand};
-use mkplaylist::{error::Error, operation::Operation, run};
+use mkplaylist::{error::Error, operation::Operation, operation::PlayList, run};
 use std::path::Path;
 
 fn main() -> Result<(), Error> {
@@ -52,11 +52,18 @@ fn main() -> Result<(), Error> {
         let path = Path::new(matches.value_of("path").unwrap()).to_path_buf();
         Operation::Index(path)
     } else if let Some(matches) = matches.subcommand_matches("playlist") {
-        if let Some(filter) = matches.value_of("filter") {
-            Operation::PlayList(Some(filter), matches.is_present("shuffle"))
+        let playlist = if let Some(filter) = matches.value_of("filter") {
+            if matches.is_present("shuffle") {
+                PlayList::ShuffledFiltered(filter)
+            } else {
+                PlayList::Filtered(filter)
+            }
+        } else if matches.is_present("shuffle") {
+            PlayList::Shuffled
         } else {
-            Operation::PlayList(None, matches.is_present("shuffle"))
-        }
+            PlayList::Standard
+        };
+        Operation::Create(playlist)
     } else if let Some(matches) = matches.subcommand_matches("rate") {
         let music_id: i64 = matches.value_of("music_id").unwrap().parse().unwrap();
         let rating: i64 = matches.value_of("rating").unwrap().parse().unwrap();
