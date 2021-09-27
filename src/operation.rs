@@ -1,9 +1,12 @@
+use crate::rating::Rating;
+
 use std::path::PathBuf;
 
 #[derive(Debug)]
 pub enum PlayList<'a> {
     Standard,
     Filtered(&'a str),
+    Rated(Rating),
     Shuffled,
     ShuffledFiltered(&'a str),
 }

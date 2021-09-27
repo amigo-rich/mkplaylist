@@ -6,6 +6,7 @@ mod music;
 use music::Music;
 pub mod operation;
 use operation::{Operation, PlayList};
+mod rating;
 mod store;
 use store::Store;
 
@@ -34,6 +35,7 @@ pub fn run(operation: Operation) -> Result<(), Error> {
                 PlayList::Filtered(filter) | PlayList::ShuffledFiltered(filter) => {
                     store.select_filter(filter)?
                 }
+                PlayList::Rated(ref rating) => store.select_by_rating(rating.as_i64())?,
             };
             if let Some(mut music) = music {
                 match playlist {
